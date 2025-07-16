@@ -3,17 +3,24 @@ import os
 from pathlib import Path
 import subprocess
 import uvicorn
-import requests
 from starlette.responses import FileResponse, JSONResponse
 from starlette.routing import Route
 from urllib.parse import unquote
+import sys
 
 mcp = FastMCP('manim-mcp-server', json_response=True, stateless_http=True)
 
 @mcp.tool
 def get_context(docs_list_str: str) -> str:
-    """Retrieve context for a given query."""
-    docs_list = docs_list_str.split(",")
+    """Retrieve context for a given query.
+
+    Args:
+        docs_list_str (str): A list of docs to retrieve, separated by ",".
+
+    Returns:
+        str: A string of all concatenated documents.
+    """
+    docs_list = docs_list_str.strip("\n").split(",")
     ret = ""
     if os.getcwd().endswith("manimations"):
         os.chdir("..")
@@ -27,6 +34,14 @@ pairs = [('\a', '\\a'), (r"\x07", '\\a'), ('\b', '\\b'), ('\f', '\\f'), ('\r', '
 
 @mcp.tool
 def generate_video(code: str) -> str:
+    """Generates video based on urllib.parse.quote'd code.
+
+    Args:
+        code (str): urllib.parse.quote'd code to generate video from.
+
+    Returns:
+        str: Empty string.
+    """
     if os.getcwd().endswith("manimations"):
         os.chdir("..")
     print("running,", os.getcwd())
@@ -45,7 +60,7 @@ def generate_video(code: str) -> str:
     with open("main.py", "w") as f:
         f.write(code)
 
-    manim_cmd = [".venv/bin/python", "-m", "manim", "-qm", "main.py", "Main"]
+    manim_cmd = [sys.executable, "-m", "manim", "-qm", "main.py", "Main"]
     result = subprocess.run(manim_cmd, capture_output=True, text=True)
     print(result.stdout)
     
@@ -69,10 +84,16 @@ async def download_file(request):
     if not os.path.exists(file_path):
         return JSONResponse({"error": "File not found"}, status_code=404)
     
+    mtime = os.path.getmtime(file_path)
+    
     return FileResponse(
         file_path,
         media_type='video/mp4',
-        filename=filename
+        filename=filename,
+        headers={
+            "Cache-Control": "no-cache",  # Prevent caching of potentially changing files
+            "ETag": f'"{mtime}"'  # Use modification time as ETag
+        }
     )
     
 download_route = Route('/download/{filename}', download_file, methods=['GET'])

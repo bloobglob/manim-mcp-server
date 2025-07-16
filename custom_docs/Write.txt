@@ -7,5 +7,5 @@ Simulate hand-writing a Text or hand-drawing a VMobject.
 
 ## Example Usage
 ```python
-self.play(Write(Text("Hello", font_size=144)))
+self.play(Write(Text('Hello', font_size=144)))
 ```

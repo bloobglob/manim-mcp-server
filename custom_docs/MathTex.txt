@@ -9,5 +9,5 @@ A string compiled with LaTeX in math mode.
 ## Example Usage
 Important: Be sure to use raw string literals.
 ```python
-text = MathTex(r"a^2+b^2=c^2", font_size=36)
+text = MathTex(r'a^2+b^2=c^2', font_size=36)
 ```

@@ -2,10 +2,41 @@ from manim import *
 import math
 import numpy as np
 
+def play_natural_number_sum_proof(scene: Scene):
+    """
+    Plays the visual proof of 1+2+...+n=n(n+1)/2. 
+    Begin derivation with 2(1 + 2 + \dots + n) = A = b \cdot h = n(n+1)
+    """
+    square = Square(0.5, stroke_width=2, color=BLUE, fill_color=BLUE, fill_opacity=0.2).move_to([2, -1.25, 0])
+    scene.play(Create(square))
+    
+    squares: list[Square] = []
+    for i in range(1, 7):
+        for j in range(i + 1):
+            squares.append(Square(0.5, stroke_width=2, color=BLUE, fill_color=BLUE, fill_opacity=0.2).move_to([2 + 0.5 * i, -1.25 + 0.5 * j, 0]))
+    
+    scene.play(LaggedStart(*[Create(square) for square in squares], run_time=2, lag_ratio=0.05))
+    
+    group = VGroup(square, *squares).copy()
+    scene.add(group)
+    scene.play(group.animate.set_color(RED).set_fill(RED))
+    scene.play(Rotate(group, angle=PI, about_point=[3.25, 0.25, 0]))
+    
+    rect = Rectangle(height=3.5, width=4, fill_opacity=0, stroke_width=0).move_to([3.25, 0.25, 0])
+    
+    label1 = BraceLabel(rect, r"n", LEFT)
+    label2 = BraceLabel(rect, r"n+1", DOWN)
+    scene.play(Create(label1))
+    scene.play(Create(label2))
+
 def play_circ_area_proof(scene: Scene):
-    circle = Circle(radius=2)
+    """
+    Plays the visual proof of the area of a circle. 
+    Begin derivation with A_{circ} = A_{rect}
+    """
+    circle = Circle(radius=1.25)
     num_wedges = 32
-    wedges = []
+    wedges: list[AnnularSector] = []
     for i in range(num_wedges):
         angle = i * 2 * PI / num_wedges
         wedges.append(AnnularSector(
@@ -19,22 +50,63 @@ def play_circ_area_proof(scene: Scene):
         ))
     scene.play(Create(circle))
     scene.play(*[Create(wedge) for wedge in wedges])
+    wedge2 = AnnularSector(
+        inner_radius=0,
+        outer_radius=2,
+        start_angle=3 * PI / 2 - PI / num_wedges,
+        angle=2 * PI / num_wedges,
+        color=BLUE,
+        fill_opacity=0.2,
+        stroke_width=1
+    )
+    wedges2: list[AnnularSector] = []
+    for i in range(num_wedges // 2):
+        wedges2.append(AnnularSector(
+            inner_radius=0,
+            outer_radius=circle.radius,
+            start_angle=3 * PI / 2 - PI / num_wedges,
+            angle=2 * PI / num_wedges,
+            color=BLUE,
+            fill_opacity=0.2,
+            stroke_width=1
+        ).move_to([2.5 + i * 2 * circle.radius * math.sin(PI / num_wedges), 0, 0]))
     
-    for i in range(num_wedges):
-        scene.play(wedges[i].animate.move_to([2.5 + i * 2 * math.sin(PI / num_wedges), 0, 0]).rotate((-i * 2 - 1) * PI / num_wedges - PI / 2))
+    for i in range(num_wedges // 2):
+        wedges2.append(AnnularSector(
+            inner_radius=0,
+            outer_radius=circle.radius,
+            start_angle=PI / 2 - PI / num_wedges,
+            angle=2 * PI / num_wedges,
+            color=BLUE,
+            fill_opacity=0.2,
+            stroke_width=1
+        ).move_to([2.5 + ((i * 2 - 1) * circle.radius) * math.sin(PI / num_wedges), circle.radius * (1 - math.cos(PI / num_wedges)), 0]))
+    
+    scene.play(LaggedStart(*[Transform(wedges[i], wedges2[i]) for i in range(num_wedges)], lag_ratio = 0.1, run_time=4))
+    
+    rect = Rectangle(height=circle.radius, width=PI * circle.radius, fill_opacity=0, stroke_width=0).move_to([2.5 + PI * circle.radius / 2, 0, 0])
+    label1 = BraceLabel(rect, r"h=r", LEFT)
+    label2 = BraceLabel(rect, r"b=\frac{c}{2}=\pi r", DOWN)
+    scene.play(Create(label1))
+    scene.play(Create(label2))
 
 def play_deriv(*lines, scene: Scene):
+    """
+    Plays derivations.
+    """
     texs = []
     for i, line in enumerate(lines):
         if i == 0:
-            texs.append(MathTex(line, font_size=24).to_corner(UL))
-        elif i == len(lines) - 1:
-            texs.append(MathTex(r"\fbox{" + line + "}", color=GREEN).next_to(texs[i-1], DOWN, buff=0.2, aligned_edge=LEFT, font_size=24))
+            texs.append(MathTex(line, font_size=48).to_corner(UL))
         else:
-            texs.append(MathTex(line).next_to(texs[i-1], DOWN, buff=0.2, aligned_edge=LEFT, font_size=24))
+            texs.append(MathTex(line, font_size=48).next_to(texs[i-1], DOWN, buff=0.2, aligned_edge=LEFT))
         scene.play(Write(texs[i]))
 
 def play_pythag_visual(scene: Scene, a=None, b=None, c=None):
+    """
+    Plays Pythagorean theorem visualization, with a square on each side of the right triangle. 
+    Start derivation with a^2 + b^2 = c^2
+    """
     oa = a if a != None else "?"
     ob = b if b != None else "?"
     oc = c if c != None else "?"
@@ -62,10 +134,16 @@ def play_pythag_visual(scene: Scene, a=None, b=None, c=None):
     scene.play(Create(a_label))
     scene.play(Create(b_label))
     scene.play(Create(c_label))
-    for square in squares_on_edges(A, B, C):
+    for label, square in zip(['a', 'c', 'b'], squares_on_edges(A, B, C)):
         scene.play(Create(square))
+        scene.play(Write(MathTex(label + "^2").move_to(square.get_center())))
         
 def play_pythag_proof(scene: Scene):
+    """
+    Plays Pythagorean theorem proof, with four triangles and two squares.
+    Begin derivation with A_{big square} = A_{four triangles} + A_{small square}.
+    A_{big square} = (a+b)^2, A_{small square} = c^2, A_{four triangles} = 4 \cdot \frac{1}{2}ab
+    """
     A = np.array([0, -3.5, 0])
     B = np.array([0, 3.5, 0])
     C = np.array([7, 3.5, 0])

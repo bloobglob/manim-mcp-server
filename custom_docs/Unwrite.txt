@@ -7,7 +7,7 @@ Simulate erasing by hand a Text or a VMobject.
 
 ## Example Usage
 ```python
-text = Text("Hello", font_size=144)
+text = Text('Hello', font_size=144)
 self.add(text)
 self.play(Unwrite(text))
 ```

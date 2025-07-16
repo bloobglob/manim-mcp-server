@@ -15,7 +15,7 @@ line = LabeledLine(
     label          = '0.5',
     label_position = 0.8,
     label_config = {
-        "font_size" : 20
+        'font_size' : 20
     },
     start=LEFT+DOWN,
     end=RIGHT+UP)
